@@ -1,8 +1,8 @@
 
-all: Hello.class parseHello
+all: Hello.class inspectHello
 
 Hello.class: Hello.java
-	javac @<
+	javac $<
 
 Hello: Hello.class
 	java Hello
@@ -10,8 +10,8 @@ Hello: Hello.class
 clean:
 	rm -f *.class *.dump *.beam
 
-parse_class.beam: parse_class.erl
+inspect_class.beam: inspect_class.erl
 	erlc $<
 
-parseHello: parse_class.beam
-	erl -noshell -s parse_class main Hello.class -s init stop
+inspectHello: inspect_class.beam
+	erl -noshell -s inspect_class main Hello.class -s init stop
