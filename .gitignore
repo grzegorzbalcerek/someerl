@@ -1,0 +1,11 @@
+lib/
+out/
+.idea/
+app.log
+res.txt
+**/*.iml
+**/*.hi
+**/*.class
+**/*.dump
+**/*.beam
+**/*.o
