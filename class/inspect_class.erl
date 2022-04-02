@@ -95,6 +95,22 @@ inspectClassFlags(Flags) ->
   inspectFlag(Flags, 16#4000, "ACC_ENUM"),
   io:format("~n").
 
+inspectInnerClassFlags(K, Flags) ->
+  <<Flags4:4, Flags3:4, Flags2:4, Flags1:4>> = <<Flags:16>>,
+  io:format("  ~4.w: InnerClassAccessFlags: 0x~4.16.0B == ~4.2.0B ~4.2.0B ~4.2.0B ~4.2.0B:", [K, Flags, Flags4, Flags3, Flags2, Flags1]),
+  inspectFlag(Flags, 16#0001, "ACC_PUBLIC"),
+  inspectFlag(Flags, 16#0002, "ACC_PRIVATE"),
+  inspectFlag(Flags, 16#0004, "ACC_PROTECTED"),
+  inspectFlag(Flags, 16#0008, "ACC_STATIC"),
+  inspectFlag(Flags, 16#0010, "ACC_FINAL"),
+  inspectFlag(Flags, 16#0200, "ACC_INTERFACE"),
+  inspectFlag(Flags, 16#0400, "ACC_ABSTRACT"),
+  inspectFlag(Flags, 16#1000, "ACC_SYNTHETIC"),
+  inspectFlag(Flags, 16#2000, "ACC_ANNOTATION"),
+  inspectFlag(Flags, 16#4000, "ACC_ENUM"),
+  io:format("~n").
+
+
 inspectInterfaces(Bin, K, InterfacesCount, _) when K =:= InterfacesCount ->
   Bin;
 inspectInterfaces(<<Index:16, BinTail/binary>>, K, InterfacesCount, CpDict) ->
@@ -179,10 +195,25 @@ inspectAttribute("Code", <<MaxStack:16,MaxLocals:16,CodeLength:32,Bin/binary>>, 
   <<AttributesCount:16, BinTail3/binary>> = BinTail1,
   io:format("  AttributesCount: ~w~n", [AttributesCount]),
   inspectAttributes(BinTail3, 0, AttributesCount, CpDict);
+inspectAttribute("InnerClasses", <<NumberOfClasses:16,Bin/binary>>, CpDict) ->
+  io:format("  NumberOfClasses: ~w~n", [NumberOfClasses]),
+  {ClassesBin, <<>>} = split_binary(Bin, NumberOfClasses*8),
+  inspectInnerClass(ClassesBin, 0, NumberOfClasses, CpDict);
+inspectAttribute("Signature", <<SignatureIndex:16>>, CpDict) ->
+  io:format("  SignatureIndex: ~w [~s]~n", [SignatureIndex, decodeCpIndex(SignatureIndex, CpDict)]);
 inspectAttribute("SourceFile", <<SourceFileIndex:16>>, CpDict) ->
   io:format("  SourceFileIndex: ~w [~s]~n", [SourceFileIndex, decodeCpIndex(SourceFileIndex, CpDict)]);
-inspectAttribute(_, _, _) ->
-  io:format("  Unhandled attribute").
+inspectAttribute(Attr, <<AttrBin/binary>>, _) ->
+  io:format("  Attribute ~s binary content: ~w~n", [Attr, AttrBin]).
+
+inspectInnerClass(_, K, NumberOfClasses, _) when K =:= NumberOfClasses ->
+  io:format("");
+inspectInnerClass(<<InnerClassInfoIndex:16, OuterClassInfoIndex:16, InnerNameIndex:16, InnerClassAccessFlags:16, BinTail/binary>>, K, NumberOfClasses, CpDict) ->
+  io:format("  ~4.w: InnerClassInfoIndex: ~w [~s]~n", [K, InnerClassInfoIndex, decodeCpIndex(InnerClassInfoIndex, CpDict)]),
+  io:format("  ~4.w: OuterClassInfoIndex: ~w [~s]~n", [K, OuterClassInfoIndex, decodeCpIndex(OuterClassInfoIndex, CpDict)]),
+  io:format("  ~4.w: InnerNameIndex: ~w [~s]~n", [K, InnerNameIndex, decodeCpIndex(InnerNameIndex, CpDict)]),
+  inspectInnerClassFlags(K, InnerClassAccessFlags),
+  inspectInnerClass(BinTail, K+1, NumberOfClasses, CpDict).
 
 inspectCode(_, K, CodeLength, _) when K =:= CodeLength ->
   io:format("  == code end ==~n");
@@ -192,8 +223,23 @@ inspectCode(<<18, Index:8, BinTail/binary>>, K, CodeLength, CpDict) ->
 inspectCode(<<20, Index:16, BinTail/binary>>, K, CodeLength, CpDict) ->
   io:format("  ~4.w: ldc2_w ~w [~s]~n", [K, Index, decodeCpIndex(Index, CpDict)]),
   inspectCode(BinTail, K+3, CodeLength, CpDict);
+inspectCode(<<26, BinTail/binary>>, K, CodeLength, CpDict) ->
+  io:format("  ~4.w: iload_0~n", [K]),
+  inspectCode(BinTail, K+1, CodeLength, CpDict);
+inspectCode(<<27, BinTail/binary>>, K, CodeLength, CpDict) ->
+  io:format("  ~4.w: iload_1~n", [K]),
+  inspectCode(BinTail, K+1, CodeLength, CpDict);
+inspectCode(<<28, BinTail/binary>>, K, CodeLength, CpDict) ->
+  io:format("  ~4.w: iload_2~n", [K]),
+  inspectCode(BinTail, K+1, CodeLength, CpDict);
+inspectCode(<<29, BinTail/binary>>, K, CodeLength, CpDict) ->
+  io:format("  ~4.w: iload_3~n", [K]),
+  inspectCode(BinTail, K+1, CodeLength, CpDict);
 inspectCode(<<42, BinTail/binary>>, K, CodeLength, CpDict) ->
   io:format("  ~4.w: aload_0~n", [K]),
+  inspectCode(BinTail, K+1, CodeLength, CpDict);
+inspectCode(<<176, BinTail/binary>>, K, CodeLength, CpDict) ->
+  io:format("  ~4.w: areturn~n", [K]),
   inspectCode(BinTail, K+1, CodeLength, CpDict);
 inspectCode(<<177, BinTail/binary>>, K, CodeLength, CpDict) ->
   io:format("  ~4.w: return~n", [K]),
