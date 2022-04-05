@@ -215,46 +215,54 @@ inspectInnerClass(<<InnerClassInfoIndex:16, OuterClassInfoIndex:16, InnerNameInd
   inspectInnerClassFlags(K, InnerClassAccessFlags),
   inspectInnerClass(BinTail, K+1, NumberOfClasses, CpDict).
 
-inspectCode(_, K, CodeLength, _) when K =:= CodeLength ->
-  io:format("  == code end ==~n");
-inspectCode(<<18, Index:8, BinTail/binary>>, K, CodeLength, CpDict) ->
-  io:format("  ~4.w: ldc ~w [~s]~n", [K, Index, decodeCpIndex(Index, CpDict)]),
-  inspectCode(BinTail, K+2, CodeLength, CpDict);
-inspectCode(<<20, Index:16, BinTail/binary>>, K, CodeLength, CpDict) ->
-  io:format("  ~4.w: ldc2_w ~w [~s]~n", [K, Index, decodeCpIndex(Index, CpDict)]),
-  inspectCode(BinTail, K+3, CodeLength, CpDict);
-inspectCode(<<26, BinTail/binary>>, K, CodeLength, CpDict) ->
-  io:format("  ~4.w: iload_0~n", [K]),
-  inspectCode(BinTail, K+1, CodeLength, CpDict);
-inspectCode(<<27, BinTail/binary>>, K, CodeLength, CpDict) ->
-  io:format("  ~4.w: iload_1~n", [K]),
-  inspectCode(BinTail, K+1, CodeLength, CpDict);
-inspectCode(<<28, BinTail/binary>>, K, CodeLength, CpDict) ->
-  io:format("  ~4.w: iload_2~n", [K]),
-  inspectCode(BinTail, K+1, CodeLength, CpDict);
-inspectCode(<<29, BinTail/binary>>, K, CodeLength, CpDict) ->
-  io:format("  ~4.w: iload_3~n", [K]),
-  inspectCode(BinTail, K+1, CodeLength, CpDict);
-inspectCode(<<42, BinTail/binary>>, K, CodeLength, CpDict) ->
-  io:format("  ~4.w: aload_0~n", [K]),
-  inspectCode(BinTail, K+1, CodeLength, CpDict);
-inspectCode(<<176, BinTail/binary>>, K, CodeLength, CpDict) ->
-  io:format("  ~4.w: areturn~n", [K]),
-  inspectCode(BinTail, K+1, CodeLength, CpDict);
-inspectCode(<<177, BinTail/binary>>, K, CodeLength, CpDict) ->
-  io:format("  ~4.w: return~n", [K]),
-  inspectCode(BinTail, K+1, CodeLength, CpDict);
-inspectCode(<<178, Index:16, BinTail/binary>>, K, CodeLength, CpDict) ->
-  io:format("  ~4.w: getstatic ~w [~s]~n", [K, Index, decodeCpIndex(Index, CpDict)]),
-  inspectCode(BinTail, K+3, CodeLength, CpDict);
-inspectCode(<<182, Index:16, BinTail/binary>>, K, CodeLength, CpDict) ->
-  io:format("  ~4.w: invokevirtual ~w [~s]~n", [K, Index, decodeCpIndex(Index, CpDict)]),
-  inspectCode(BinTail, K+3, CodeLength, CpDict);
-inspectCode(<<183, Index:16, BinTail/binary>>, K, CodeLength, CpDict) ->
-  io:format("  ~4.w: invokespecial ~w [~s]~n", [K, Index, decodeCpIndex(Index, CpDict)]),
-  inspectCode(BinTail, K+3, CodeLength, CpDict);
-inspectCode(<<OpCode:8, _/binary>>, K, _, _) ->
-  io:format("  ~4.w: Unrecognized opcode: ~w~n", [K, OpCode]).
+inspectCode(_, K, CodeLength, _) when K =:= CodeLength -> io:format("  == code end ==~n");
+inspectCode(<<2, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("iconst_m1",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<3, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("iconst_0",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<4, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("iconst_1",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<5, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("iconst_2",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<6, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("iconst_3",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<7, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("iconst_4",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<8, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("iconst_5",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<16, Index:8, BinTail/binary>>, K, CodeLength, CpDict) -> opcode2index("bipush", Index, BinTail, K, CodeLength, CpDict);
+inspectCode(<<18, Index:8, BinTail/binary>>, K, CodeLength, CpDict) -> opcode2index("ldc", Index, BinTail, K, CodeLength, CpDict);
+inspectCode(<<20, Index:16, BinTail/binary>>, K, CodeLength, CpDict) -> opcode3index("ldc2_w", Index, BinTail, K, CodeLength, CpDict);
+inspectCode(<<26, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("iload_0",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<27, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("iload_1",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<28, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("iload_2",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<29, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("iload_3",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<42, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("aload_0",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<43, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("aload_1",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<44, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("aload_2",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<45, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("aload_3",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<75, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("astore_0",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<76, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("astore_1",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<77, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("astore_2",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<78, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("astore_3",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<89, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("dup",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<96, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("iadd",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<100, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("isub",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<104, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("imul",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<176, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("areturn",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<177, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("return",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<178, Index:16, BinTail/binary>>, K, CodeLength, CpDict) -> opcode3index("getstatic", Index, BinTail, K, CodeLength, CpDict);
+inspectCode(<<179, Index:16, BinTail/binary>>, K, CodeLength, CpDict) -> opcode3index("putstatic", Index, BinTail, K, CodeLength, CpDict);
+inspectCode(<<180, Index:16, BinTail/binary>>, K, CodeLength, CpDict) -> opcode3index("getfield", Index, BinTail, K, CodeLength, CpDict);
+inspectCode(<<181, Index:16, BinTail/binary>>, K, CodeLength, CpDict) -> opcode3index("putfield", Index, BinTail, K, CodeLength, CpDict);
+inspectCode(<<182, Index:16, BinTail/binary>>, K, CodeLength, CpDict) -> opcode3index("invokevirtual", Index, BinTail, K, CodeLength, CpDict);
+inspectCode(<<183, Index:16, BinTail/binary>>, K, CodeLength, CpDict) -> opcode3index("invokespecial", Index, BinTail, K, CodeLength, CpDict);
+inspectCode(<<187, Index:16, BinTail/binary>>, K, CodeLength, CpDict) -> opcode3index("new", Index, BinTail, K, CodeLength, CpDict);
+inspectCode(<<191, BinTail/binary>>, K, CodeLength, CpDict) -> opcode1("athrow",  BinTail, K, CodeLength, CpDict);
+inspectCode(<<OpCode:8, _/binary>>, K, _, _) -> io:format("  ~4.w: Unrecognized opcode: ~w~n", [K, OpCode]).
+
+opcode1(Name, BinTail, K, CodeLength, CpDict) ->
+  io:format("  ~4.w: ~s~n", [K, Name]),
+  inspectCode(BinTail, K+1, CodeLength, CpDict).
+opcode2index(Name, Index, BinTail, K, CodeLength, CpDict) ->
+  io:format("  ~4.w: ~s ~w [~s]~n", [K, Name, Index, decodeCpIndex(Index, CpDict)]),
+  inspectCode(BinTail, K+2, CodeLength, CpDict).
+opcode3index(Name, Index, BinTail, K, CodeLength, CpDict) ->
+  io:format("  ~4.w: ~s ~w [~s]~n", [K, Name, Index, decodeCpIndex(Index, CpDict)]),
+  inspectCode(BinTail, K+3, CodeLength, CpDict).
 
 decodeCpIndex(Index, CpDict) ->
   {ok, Entry} = dict:find(Index, CpDict),
