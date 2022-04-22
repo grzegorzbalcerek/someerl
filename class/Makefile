@@ -1,9 +1,9 @@
 
-CLASSFILE=Hello.class
+F=Hello.class
 
-all: $(CLASSFILE) inspectClass
+all: $(F) inspectClass
 
-Hello.class: Hello.java
+%.class: %.java
 	javac $<
 
 Hello: Hello.class
@@ -16,4 +16,4 @@ inspect_class.beam: inspect_class.erl
 	erlc $<
 
 inspectClass: inspect_class.beam
-	erl -noshell -s inspect_class main $(CLASSFILE) -s init stop
+	erl -noshell -s inspect_class main $(F) -s init stop
